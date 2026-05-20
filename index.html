@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ILP TAB">
+<meta name="application-name" content="ILP TAB">
+<meta name="msapplication-TileColor" content="#0b1630">
+<meta name="theme-color" content="#0b1630">
+<title>ILP TAB — Ivoire Luxe Pressing</title>
+<meta name="description" content="Dashboard de gestion — Ivoire Luxe Pressing">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Josefin+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+<!-- ═══════════════════════════════════════
+     LOGIN SCREEN
+═══════════════════════════════════════ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <img id="loginLogo" class="login-logo" alt="ILP">
+    <div class="login-brand">
+      <div class="login-brand-name">Ivoire Luxe Pressing</div>
+      <div class="login-brand-tag">Système de gestion interne</div>
+    </div>
+
+    <!-- BIOMETRIC SECTION (shown when a registered user exists) -->
+    <div id="bioSection" style="display:none">
+      <div class="login-title">Accès rapide</div>
+      <div id="bioUserChips" style="display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:10px"></div>
+      <button class="bio-btn" id="bioBtn" onclick="doBiometric()">
+        <span class="bio-icon" id="bioIcon">🔐</span>
+        <span id="bioLabel">Déverrouiller avec empreinte / Face ID</span>
+      </button>
+      <div id="bioError" style="display:none;color:var(--rouge);font-size:11px;text-align:center;margin-top:8px;padding:8px;background:rgba(212,75,58,.08);border-radius:var(--radius);border:1px solid rgba(212,75,58,.2)"></div>
+      <div class="bio-divider">ou</div>
+    </div>
+
+    <!-- MANUAL LOGIN -->
+    <div id="manualSection">
+      <div class="login-title" id="manualTitle">Connexion sécurisée</div>
+      <div class="login-error" id="loginError">Identifiant ou mot de passe incorrect.</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="fg">
+          <label class="fl">Identifiant utilisateur</label>
+          <input class="fi" id="loginId" placeholder="Ex: ADM001" autocomplete="username" autocapitalize="off">
+        </div>
+        <div class="fg">
+          <label class="fl">Mot de passe</label>
+          <div style="position:relative">
+            <input class="fi" type="password" id="loginPw" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+            <span onclick="togglePw()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--blanc-muted);font-size:14px" id="pwEye">👁</span>
+          </div>
+        </div>
+        <button class="btn btn-gold" onclick="doLogin()" style="width:100%;justify-content:center;margin-top:6px;padding:11px">Accéder au dashboard</button>
+        <div id="bioRegisterHint" style="display:none" class="bio-reg-btn" onclick="showBioRegisterInfo()">
+          🔐 Activer la connexion biométrique après connexion
+        </div>
+      </div>
+    </div>
+
+    <div class="login-footer">Ivoire Luxe Pressing · Accès réservé au personnel autorisé</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MAIN APP
+═══════════════════════════════════════ -->
+<div id="app" style="display:none">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:9px">
+      <div class="icon-btn menu-toggle" onclick="toggleSidebar()" id="menuToggle" style="display:none">
+        <span style="display:flex;flex-direction:column;gap:4px"><span style="width:16px;height:1px;background:var(--or);display:block"></span><span style="width:16px;height:1px;background:var(--or);display:block"></span><span style="width:16px;height:1px;background:var(--or);display:block"></span></span>
+      </div>
+      <div class="brand">
+        <img id="topbarLogo" class="brand-logo" alt="ILP">
+        <div class="brand-text">Ivoire Luxe Pressing<small>Bingerville · Jacqueville</small></div>
+        <div id="_syncDot" title="Synchronisation en cours" style="width:7px;height:7px;border-radius:50%;background:#22c55e;opacity:0;transition:opacity .4s;flex-shrink:0;box-shadow:0 0 6px #22c55e88"></div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <!-- Zone présence équipe -->
+      <div class="presence-bar" id="presenceBar" title="Équipe en ligne"></div>
+      <div class="icon-btn" onclick="nav('notifs')" title="Notifications">🔔<div class="notif-dot" id="notifDot" style="display:none">0</div></div>
+      <div class="icon-btn" id="pwaTopBtn" onclick="installPWA()" title="Installer l'application" style="display:none;font-size:16px">📲</div>
+      <div class="user-pill" onclick="nav('profil')">
+        <div class="user-avatar" id="topAvatar">?</div>
+        <div style="display:flex;flex-direction:column;gap:1px">
+          <span id="topName" style="font-size:11px;color:var(--blanc)">—</span>
+          <span class="role-badge" id="topRole">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-section" id="sidebarNav"></div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name" id="sideUserName">—</div>
+        <div class="sidebar-user-role" id="sideUserRole">—</div>
+        <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="margin-top:8px;width:100%;justify-content:center">⏻ Déconnexion</button>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content" id="content">
+
+      <!-- ── ACCUEIL ── -->
+      <div class="page" id="page-accueil">
+        <div class="ph">
+          <div><div class="ph-title">Tableau de bord <span>KPIs</span></div><div class="ph-sub" id="todayLbl"></div></div>
+          <div class="ph-actions"><button class="btn btn-gold" onclick="openModal('newOrder')">＋ Nouvelle commande</button></div>
+        </div>
+        <div id="kpiGrid" class="kpi-grid"></div>
+        <div id="accueilPresenceWidget" style="margin-bottom:2px"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <div class="card">
+            <div class="card-hd"><div class="card-title">CA — 7 jours</div></div>
+            <div class="card-body">
+              <div class="mini-chart" id="miniChart"></div>
+              <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:var(--blanc-muted)" id="chartLbls"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-hd"><div class="card-title">Répartition statuts</div></div>
+            <div class="card-body" id="distrib"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Commandes récentes</div><button class="btn btn-outline btn-sm" onclick="nav('commandes')">Tout voir</button></div>
+          <div style="padding:0"><div class="tbl-wrap"><table><thead><tr><th>N°</th><th>Client</th><th>Pcs</th><th>Total</th><th>Statut</th><th>Date</th><th></th></tr></thead><tbody id="recentTbody"></tbody></table></div></div>
+        </div>
+      </div>
+
+      <!-- ── OPÉRATIONS ── -->
+      <div class="page" id="page-ops">
+        <div class="ph"><div><div class="ph-title">Opérations <span>& Workflow</span></div><div class="ph-sub">Suivi temps réel</div></div></div>
+        <div class="pipeline" id="pipeline"></div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-hd"><div class="card-title">⚠ Retards</div><span id="retardCount" style="font-size:10px;color:var(--rouge)"></span></div>
+          <div class="card-body" id="alertList"></div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">En cours</div></div>
+          <div style="padding:0"><div class="tbl-wrap"><table><thead><tr><th>N°</th><th>Client</th><th>Étape</th><th>Depuis</th><th>Action</th></tr></thead><tbody id="enCoursTbody"></tbody></table></div></div>
+        </div>
+      </div>
+
+      <!-- ── COMMANDES ── -->
+      <div class="page" id="page-commandes">
+        <div class="ph">
+          <div><div class="ph-title">Gestion <span>Commandes</span></div><div class="ph-sub" id="cmdCount"></div></div>
+          <div class="ph-actions">
+            <select class="fi" style="height:34px;font-size:11px;width:130px" id="cmdFilter" onchange="renderCommandes()">
+              <option value="">Tous statuts</option>
+              <option value="reçu">Reçu</option><option value="lavage">Lavage</option>
+              <option value="séchage">Séchage</option><option value="repassage">Repassage</option>
+              <option value="prêt">Prêt</option><option value="livré">Livré</option>
+            </select>
+            <button class="btn btn-gold" onclick="openModal('newOrder')">＋ Nouveau</button>
+          </div>
+        </div>
+        <div class="card" style="padding:0"><div class="tbl-wrap"><table><thead><tr><th>N°</th><th>Client</th><th>Par</th><th>Pcs</th><th>Total</th><th>Avance</th><th>Reste</th><th>Statut</th><th>Date</th><th>Actions</th></tr></thead><tbody id="cmdTbody"></tbody></table></div></div>
+      </div>
+
+      <!-- ── CLIENTS ── -->
+      <div class="page" id="page-clients">
+        <div class="ph">
+          <div><div class="ph-title">Gestion <span>Clients</span></div><div class="ph-sub" id="clientCount"></div></div>
+          <div class="ph-actions"><button class="btn btn-gold" onclick="openModal('newClient')">＋ Nouveau</button></div>
+        </div>
+        <div class="search-bar">
+          <div class="search-input-wrap" style="flex:1">
+            <span class="search-ico">🔍</span>
+            <input class="fi" id="clientSearch" placeholder="Nom, téléphone, ville, type..." oninput="renderClients()" style="padding-left:34px">
+          </div>
+          <select class="fi" style="width:130px;height:38px;font-size:11px" id="clientTypeFilter" onchange="renderClients()">
+            <option value="">Tous types</option>
+            <option>Particulier</option><option>Hôtel / B2B</option>
+            <option>Résidence</option><option>Entreprise</option>
+          </select>
+        </div>
+        <!-- Clients anciens (>2 sem sans commande) - admin/gerant only -->
+  <div id="clientsRelanceSection" style="margin-bottom:12px"></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px" id="clientsGrid"></div>
+      </div>
+
+      <!-- ── PROCESS ── -->
+      <div class="page" id="page-process">
+        <div class="ph"><div><div class="ph-title">Réceptions <span>& Process</span></div><div class="ph-sub">Lavage · Séchage · Repassage</div></div></div>
+        <div id="processList"></div>
+      </div>
+
+      <!-- ── FACTURATION ── -->
+      <div class="page" id="page-facturation">
+        <div class="ph">
+          <div><div class="ph-title">Facturation <span>& Paiements</span></div><div class="ph-sub" id="factSub"></div></div>
+          <div class="ph-actions">
+            <select class="fi" style="height:34px;font-size:11px;width:130px" id="factFilter" onchange="renderFacturation()">
+              <option value="">Tous</option><option value="facturé">Facturé</option>
+              <option value="payé">Payé</option><option value="partiellement payé">Partiel</option>
+              <option value="impayé">Impayé</option>
+            </select>
+          </div>
+        </div>
+        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)" id="factKpis"></div>
+        <div class="card" style="padding:0"><div class="tbl-wrap"><table><thead><tr><th>N°</th><th>Client</th><th>Total</th><th>Avance</th><th>Reste</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="factTbody"></tbody></table></div></div>
+      </div>
+
+      <!-- ── LIVRAISONS ── -->
+      <div class="page" id="page-livraisons">
+        <div class="ph"><div><div class="ph-title">Livraisons <span>& Archives</span></div><div class="ph-sub">Commandes clôturées</div></div></div>
+        <div id="livrGrid"></div>
+      </div>
+
+      <!-- ── TARIFS ── -->
+      <div class="page" id="page-tarifs">
+        <div class="ph">
+          <div><div class="ph-title">Tarifs <span>& Articles</span></div></div>
+          <div class="ph-actions" id="tarifsActions">
+            <button class="btn btn-outline" id="btnAddCat" onclick="openModal('addCat')">＋ Catégorie</button>
+            <button class="btn btn-gold" id="btnEditTarifs" onclick="openModal('editTarifs')">✎ Modifier</button>
+          </div>
+        </div>
+        <div id="tarifsGrid"></div>
+      </div>
+
+      <!-- ── HISTORIQUE ── -->
+      <div class="page" id="page-historique">
+        <div class="ph">
+          <div><div class="ph-title">Historique <span>Mensuel</span></div><div class="ph-sub">Statistiques globales par mois</div></div>
+          <div class="ph-actions">
+            <select class="fi" style="height:34px;font-size:11px;width:110px" id="histYear" onchange="renderHistorique()"></select>
+          </div>
+        </div>
+        <div id="histGlobal" class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px"></div>
+        <div id="histMonths"></div>
+      </div>
+
+      <!-- ── NOTIFICATIONS ── -->
+      
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PAGE: PROSPECTS                                          -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ══════════════════════════ PAGE STOCK LINGE ══════════════════════════ -->
+<div class="page" id="page-stock_linge">
+  <div class="page-hd">
+    <div>
+      <div class="page-title">🧺 Stock Linge Client</div>
+      <div class="page-sub" id="stockLingeCount">—</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <input class="fi" id="stockLingeSearch" placeholder="Chercher client, article..." oninput="renderStockLinge()" style="width:160px;height:34px">
+      <select class="fi" id="stockLingeFilter" onchange="renderStockLinge()" style="height:34px;font-size:11px;width:120px">
+        <option value="">Tous statuts</option>
+        <option value="en_attente">⏳ En attente</option>
+        <option value="en_traitement">⚙️ En traitement</option>
+        <option value="pret">✅ Prêt</option>
+        <option value="livre">🚚 Livré</option>
+      </select>
+      <select class="fi" id="stockLingeSource" onchange="renderStockLinge()" style="height:34px;font-size:11px;width:130px">
+        <option value="">📦 Toutes sources</option>
+        <option value="commandes">📋 Commandes</option>
+        <option value="manuel">✏️ Manuel</option>
+      </select>
+      <button class="btn btn-gold btn-sm" onclick="openModalStockLinge()">＋ Ajouter</button>
+    </div>
+  </div>
+  <div id="stockLingeKpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-bottom:16px"></div>
+  <div id="stockLingeGrid"></div>
+</div>
+
+<!-- ══════════════════════════ PAGE STOCK PRODUITS ══════════════════════════ -->
+<div class="page" id="page-stock_produits">
+  <div class="page-hd">
+    <div>
+      <div class="page-title">🧴 Stock Produits d&apos;Entretien</div>
+      <div class="page-sub" id="stockProduitsCount">—</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <select class="fi" id="stockProduitsFilter" onchange="renderStockProduits()" style="height:34px;font-size:11px;width:140px">
+        <option value="">Toutes catégories</option>
+        <option value="detergent">🧼 Détergents</option>
+        <option value="assouplissant">🌸 Assouplissants</option>
+        <option value="nettoyant">✨ Nettoyants</option>
+        <option value="emballage">📦 Emballages</option>
+        <option value="autre">📋 Autre</option>
+      </select>
+      <button class="btn btn-gold btn-sm" onclick="openModalProduit()">＋ Produit</button>
+      <button class="btn btn-outline btn-sm" onclick="openModalMouvement()">📦 Mouvement</button>
+    </div>
+  </div>
+  <div id="stockProduitsAlert" style="margin-bottom:12px"></div>
+  <div id="stockProduitsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px"></div>
+  <div style="margin-top:24px">
+    <div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--or);margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid var(--border)">📋 Derniers mouvements</div>
+    <div id="stockMouvementsLog"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ PAGE CHARGES ══════════════════════════ -->
+<div class="page" id="page-charges">
+  <div class="page-hd">
+    <div>
+      <div class="page-title">💸 Gestion des Charges</div>
+      <div class="page-sub" id="chargesSub">Réservé Administrateur</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <select class="fi" id="chargesPeriode" onchange="renderCharges()" style="height:34px;font-size:11px;width:120px">
+        <option value="jour">Aujourd&apos;hui</option>
+        <option value="semaine">Cette semaine</option>
+        <option value="mois" selected>Ce mois</option>
+        <option value="tout">Tout</option>
+      </select>
+      <select class="fi" id="chargesType" onchange="renderCharges()" style="height:34px;font-size:11px;width:130px">
+        <option value="">Toutes charges</option>
+        <option value="journaliere">📅 Journalières</option>
+        <option value="hebdo">📆 Hebdomadaires</option>
+        <option value="mensuelle">🗓️ Mensuelles</option>
+        <option value="ponctuelle">⚡ Ponctuelles</option>
+      </select>
+      <button class="btn btn-gold btn-sm" onclick="openModalCharge()">＋ Charge</button>
+    </div>
+  </div>
+  <div id="chargesKpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:16px"></div>
+  <div id="chargesContent"></div>
+</div>
+
+<!-- ══════════════════════════ PAGE EMPLOYÉS ══════════════════════════ -->
+<div class="page" id="page-employes">
+  <div class="page-hd">
+    <div>
+      <div class="page-title">👨‍💼 Employés &amp; Salaires</div>
+      <div class="page-sub" id="employesSub">Réservé Administrateur</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <select class="fi" id="employesMois" style="height:34px;font-size:11px;width:110px">
+        <option value="1">Janvier</option><option value="2">Février</option>
+        <option value="3">Mars</option><option value="4">Avril</option>
+        <option value="5">Mai</option><option value="6">Juin</option>
+        <option value="7">Juillet</option><option value="8">Août</option>
+        <option value="9">Septembre</option><option value="10">Octobre</option>
+        <option value="11">Novembre</option><option value="12">Décembre</option>
+      </select>
+      <select class="fi" id="employesAnnee" style="height:34px;font-size:11px;width:80px"></select>
+      <button class="btn btn-outline btn-sm" onclick="renderEmployes()">🔍</button>
+      <button class="btn btn-gold btn-sm" onclick="openModalEmploye()">＋ Employé</button>
+      <button class="btn btn-outline btn-sm" onclick="ouvrirPaiementMasse()">💳 Payer ce mois</button>
+    </div>
+  </div>
+  <div id="employesKpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:16px"></div>
+  <div id="employesContent"></div>
+</div>
+
+<!-- ══════════════════════════════ PAGE RELANCE ══════════════════════════════ -->
+<div class="page" id="page-relance">
+  <div class="page-hd">
+    <div>
+      <div class="page-title">🔔 Clients à Relancer</div>
+      <div class="page-sub" id="relanceCount">—</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <select class="fi" style="height:34px;font-size:11px;width:130px" id="relanceFilter" onchange="renderRelance()">
+        <option value="">Tous</option>
+        <option value="inactif">Inactifs +2 sem.</option>
+        <option value="jamais">Jamais commandé</option>
+        <option value="programmee">Relance programmée</option>
+      </select>
+      <button class="btn btn-gold btn-sm" onclick="relancerTousWA()">💬 Relancer tous</button>
+    </div>
+  </div>
+  <div id="relanceKpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:16px"></div>
+  <!-- Relances auto programmées -->
+  <div id="relancesAutoSection" style="margin-bottom:18px"></div>
+  <!-- Liste clients à relancer -->
+  <div id="relanceGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px"></div>
+</div>
+
+<!-- ══════════════════════════════ PAGE BILAN ══════════════════════════════ -->
+<div class="page" id="page-bilan">
+  <div class="page-hd">
+    <div>
+      <div class="page-title">📊 Bilan Mensuel Clients</div>
+      <div class="page-sub" id="bilanSub">Réservé Administrateur</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <select class="fi" style="height:34px;font-size:11px;width:110px" id="bilanMois">
+        <option value="1">Janvier</option><option value="2">Février</option>
+        <option value="3">Mars</option><option value="4">Avril</option>
+        <option value="5">Mai</option><option value="6">Juin</option>
+        <option value="7">Juillet</option><option value="8">Août</option>
+        <option value="9">Septembre</option><option value="10">Octobre</option>
+        <option value="11">Novembre</option><option value="12">Décembre</option>
+      </select>
+      <select class="fi" style="height:34px;font-size:11px;width:80px" id="bilanAnnee"></select>
+      <select class="fi" style="height:34px;font-size:11px;width:130px" id="bilanClientFilter">
+        <option value="">Tous les clients</option>
+      </select>
+      <button class="btn btn-gold btn-sm" onclick="renderBilan()">🔍 Actualiser</button>
+    </div>
+  </div>
+  <div id="bilanKpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:16px"></div>
+  <div id="bilanContent"></div>
+</div>
+
+<div class="page" id="page-prospects">
+  <div class="page-hd">
+    <div>
+      <div class="page-title">🎯 Prospects &amp; Relances</div>
+      <div class="page-sub" id="prospectCount">—</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <select class="fi" style="height:34px;font-size:11px;width:130px" id="prospectFilter" onchange="renderProspects()">
+        <option value="">Tous</option>
+        <option value="nouveau">Nouveau</option>
+        <option value="contacté">Contacté</option>
+        <option value="relancé">Relancé</option>
+        <option value="converti">Converti ✓</option>
+        <option value="perdu">Perdu</option>
+        <option value="relance_due">⚠ Relance due</option>
+      </select>
+      <button class="btn btn-gold btn-sm" onclick="openNewProspect()">+ Prospect</button>
+    </div>
+  </div>
+  <!-- Stats relances -->
+  <div id="prospectKpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:14px"></div>
+  <!-- Liste -->
+  <div id="prospectsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px"></div>
+</div>
+
+<!-- Modal Nouveau Prospect -->
+<div class="overlay" id="modal-newProspect">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-hd">
+      <div class="modal-title" id="newProspectTitle">Nouveau Prospect</div>
+      <div class="modal-x" onclick="closeModal('newProspect')">×</div>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:10px">
+      <input type="hidden" id="np-id">
+      <div class="fg"><label class="fl">Nom complet *</label><input class="fi" id="np-nom" placeholder="Ex: M. Coulibaly"></div>
+      <div class="fg"><label class="fl">Téléphone / WhatsApp</label><input class="fi" id="np-tel" placeholder="+225 07 00 00 00 00"></div>
+      <div class="fg"><label class="fl">Email</label><input class="fi" id="np-email" type="email" placeholder="email@exemple.com"></div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Ville</label><input class="fi" id="np-ville" placeholder="Bingerville"></div>
+        <div class="fg">
+          <label class="fl">Type</label>
+          <select class="fi" id="np-type">
+            <option value="particulier">Particulier</option>
+            <option value="hotel">Hôtel / B2B</option>
+            <option value="restaurant">Restaurant</option>
+            <option value="entreprise">Entreprise</option>
+            <option value="autre">Autre</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Statut</label>
+        <select class="fi" id="np-statut">
+          <option value="nouveau">Nouveau</option>
+          <option value="contacté">Contacté</option>
+          <option value="relancé">Relancé</option>
+          <option value="converti">Converti</option>
+          <option value="perdu">Perdu</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Prochaine relance</label><input class="fi" id="np-relance" type="date"></div>
+      <div class="fg"><label class="fl">Notes</label><textarea class="fi" id="np-notes" rows="3" placeholder="Remarques, besoins, contexte..."></textarea></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal('newProspect')">Annuler</button>
+      <button class="btn btn-gold" onclick="saveProspect()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div class="page" id="page-notifs">
+        <div class="page-hd">
+          <div>
+            <div class="page-title">🔔 Notifications</div>
+            <div class="page-sub" id="notifUnreadCount">—</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <select class="fi" style="height:34px;font-size:11px;width:140px" id="notifCatFilter" onchange="renderNotifs()">
+              <option value="">Toutes catégories</option>
+              <option value="commandes">📋 Commandes</option>
+              <option value="clients">👥 Clients</option>
+              <option value="paiements">💳 Paiements</option>
+              <option value="documents">📄 Documents</option>
+              <option value="relances">🔔 Relances</option>
+              <option value="retards">⚠️ Retards</option>
+              <option value="general">ℹ️ Général</option>
+            </select>
+            <button class="btn btn-outline btn-sm" onclick="markAllRead()">✓ Tout lire</button>
+          </div>
+        </div>
+        <div class="card"><div class="card-body" id="notifLog"></div></div>
+      </div>
+
+      <!-- ── PROFIL ── -->
+      <div class="page" id="page-profil">
+        <div class="ph"><div><div class="ph-title">Mon <span>Profil</span></div></div></div>
+        <div id="profilBody"></div>
+      </div>
+
+      <!-- ── ADMIN: UTILISATEURS ── -->
+      <div class="page" id="page-users">
+        <div class="ph">
+          <div><div class="ph-title">Gestion <span>Utilisateurs</span></div></div>
+          <button class="btn btn-gold" onclick="openModal('newUser')">＋ Nouvel utilisateur</button>
+        </div>
+        <div id="usersList"></div>
+      </div>
+
+      <!-- ── PARAMÈTRES ── -->
+      <div class="page" id="page-params">
+        <div class="ph"><div><div class="ph-title">Paramètres <span>& Apparence</span></div></div></div>
+        <div class="card"><div class="card-body" id="paramsBody"></div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bnav">
+    <div class="bnav-inner" id="bnavInner"></div>
+  </div>
+  <div class="fab" onclick="openModal('newOrder')">＋</div>
+</div>
+
+<!-- TOASTS -->
+<div class="toast-box" id="toasts"></div>
+
+<!-- ═══════ MODALS ═══════ -->
+<!-- Nouvelle commande -->
+<div class="overlay" id="modal-newOrder">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-title">Nouvelle Commande</div><div class="modal-x" onclick="closeModal('newOrder')">×</div></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fg"><label class="fl">Client</label><select class="fs" id="f-client"><option value="">— Sélectionner —</option></select></div>
+        <div class="fg"><label class="fl">Site</label><select class="fs" id="f-site"><option>Bingerville</option><option>Jacqueville</option></select></div>
+        <div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="f-date"></div>
+        <div class="fg"><label class="fl">Délai (jours)</label><input type="number" class="fi" id="f-delai" value="2" min="1"></div>
+        <div class="fg full"><label class="fl">Notes</label><textarea class="fta" id="f-notes" placeholder="Instructions spéciales..."></textarea></div>
+      </div>
+      <div class="divider"></div>
+      <div style="font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--or);margin-bottom:8px;font-weight:700">Articles</div>
+      <div class="items-hd"><div class="fl">Article</div><div class="fl">Qté</div><div class="fl">Prix (FCFA)</div><div class="fl">Total</div><div></div></div>
+      <div id="itemsList"></div>
+      <div class="add-item" onclick="addItem()">＋ Ajouter un article</div>
+      <div class="order-totals">
+        <div style="text-align:right"><div class="tot-lbl">Total</div><div class="tot-val" id="oTotal">0 FCFA</div></div>
+        <div style="text-align:right"><div class="tot-lbl">Avance (FCFA)</div><input type="number" class="fi" id="f-avance" value="0" min="0" oninput="recalcTot()" style="width:110px;text-align:right;margin-top:3px"></div>
+        <div style="text-align:right"><div class="tot-lbl">Reste</div><div class="tot-val r" id="oReste">0 FCFA</div></div>
+      </div>
+    </div>
+    <div class="modal-ft"><button class="btn btn-ghost" onclick="closeModal('newOrder')">Annuler</button><button class="btn btn-gold" onclick="saveOrder()">Enregistrer ✓</button></div>
+  </div>
+</div>
+
+<!-- Nouveau client -->
+<div class="overlay" id="modal-newClient">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-hd"><div class="modal-title">Nouveau Client</div><div class="modal-x" onclick="closeModal('newClient')">×</div></div>
+    <div class="modal-body">
+      <div class="form-grid" style="grid-template-columns:1fr">
+        <div class="fg"><label class="fl">Nom complet / Raison sociale</label><input class="fi" id="nc-nom" placeholder="Ex: Hôtel La Prunelle"></div>
+        <div class="fg"><label class="fl">Téléphone / WhatsApp</label><input class="fi" id="nc-tel" placeholder="+225 07 00 00 00 00"></div>
+        <div class="fg"><label class="fl">Type</label><select class="fs" id="nc-type"><option>Particulier</option><option>Hôtel / B2B</option><option>Résidence</option><option>Entreprise</option></select></div>
+        <div class="fg"><label class="fl">Ville</label><input class="fi" id="nc-ville" placeholder="Abidjan, Bingerville..."></div>
+        <div class="fg"><label class="fl">Email (optionnel)</label><input class="fi" id="nc-email" placeholder="contact@..."></div>
+        <div class="fg"><label class="fl">Notes</label><textarea class="fta" id="nc-notes" placeholder="Informations complémentaires..." style="min-height:60px"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-ft"><button class="btn btn-ghost" onclick="closeModal('newClient')">Annuler</button><button class="btn btn-gold" onclick="saveClient()">Créer ✓</button></div>
+  </div>
+</div>
+
+<!-- Détail commande -->
+<div class="overlay" id="modal-detail">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-title" id="detailTitle">Commande</div><div class="modal-x" onclick="closeModal('detail')">×</div></div>
+    <div class="modal-body" id="detailBody"></div>
+    <div class="modal-ft" id="detailFt"></div>
+  </div>
+</div>
+
+<!-- Éditer tarifs -->
+<div class="overlay" id="modal-editTarifs">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-title">Modifier Tarifs & Articles</div><div class="modal-x" onclick="closeModal('editTarifs')">×</div></div>
+    <div class="modal-body" id="editTarifsBody"></div>
+    <div class="modal-ft"><button class="btn btn-ghost" onclick="closeModal('editTarifs')">Annuler</button><button class="btn btn-gold" onclick="saveTarifs()">Enregistrer ✓</button></div>
+  </div>
+</div>
+
+<!-- Nouvelle catégorie -->
+<div class="overlay" id="modal-addCat">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-hd"><div class="modal-title">Nouvelle Catégorie</div><div class="modal-x" onclick="closeModal('addCat')">×</div></div>
+    <div class="modal-body"><div class="fg"><label class="fl">Nom de la catégorie</label><input class="fi" id="newCatName" placeholder="Ex: Uniformes"></div></div>
+    <div class="modal-ft"><button class="btn btn-ghost" onclick="closeModal('addCat')">Annuler</button><button class="btn btn-gold" onclick="addCat()">Créer ✓</button></div>
+  </div>
+</div>
+
+<!-- Nouvel utilisateur (admin) -->
+<div class="overlay" id="modal-newUser">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-hd"><div class="modal-title" id="userModalTitle">Nouvel Utilisateur</div><div class="modal-x" onclick="closeModal('newUser')">×</div></div>
+    <div class="modal-body">
+      <div style="background:rgba(201,168,76,.06);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:16px;font-size:11px;color:var(--blanc-muted)">
+        💡 L'identifiant et le mot de passe générés seront communiqués à l'utilisateur pour se connecter.
+      </div>
+      <div class="form-grid" style="grid-template-columns:1fr">
+        <div class="fg"><label class="fl">Nom complet</label><input class="fi" id="nu-nom" placeholder="Ex: Kouassi Ama"></div>
+        <div class="fg"><label class="fl">Rôle</label>
+          <select class="fs" id="nu-role">
+            <option value="receptionniste">Réceptionniste</option>
+            <option value="gerant">Gérant</option>
+            <option value="admin">Administrateur</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Site assigné</label>
+          <select class="fs" id="nu-site"><option>Bingerville</option><option>Jacqueville</option><option>Les deux</option></select>
+        </div>
+        <div class="fg"><label class="fl">Identifiant (ID auto)</label><input class="fi" id="nu-id" placeholder="Auto-généré" readonly style="opacity:.6"></div>
+        <div class="fg"><label class="fl">Mot de passe</label>
+          <div style="display:flex;gap:7px">
+            <input class="fi" id="nu-pw" placeholder="Minimum 6 caractères" style="flex:1">
+            <button class="btn btn-ghost btn-sm" onclick="genPw()">🎲 Générer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-ft"><button class="btn btn-ghost" onclick="closeModal('newUser')">Annuler</button><button class="btn btn-gold" onclick="saveUser()">Créer l'accès ✓</button></div>
+  </div>
+</div>
+
+<!-- Détail client -->
+<div class="overlay" id="modal-clientDetail">
+  <div class="modal" style="max-width:580px">
+    <div class="modal-hd"><div class="modal-title" id="cdTitle">Client</div><div class="modal-x" onclick="closeModal('clientDetail')">×</div></div>
+    <div class="modal-body" id="cdBody"></div>
+    <div class="modal-ft" id="cdFt"></div>
+  </div>
+</div>
+
+<!-- iOS PWA modal -->
+<div class="overlay" id="modal-iosInstall">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-hd"><div class="modal-title">Installer sur iPhone/iPad</div><div class="modal-x" onclick="closeModal('iosInstall')">×</div></div>
+    <div class="modal-body">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;background:var(--or-muted);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#000;font-weight:700;font-size:11px">1</div><div><div style="font-size:13px">Appuyez sur <strong style="color:var(--or)">Partager ⬆</strong></div><div style="font-size:10px;color:var(--blanc-muted);margin-top:2px">En bas de Safari</div></div></div>
+        <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;background:var(--or-muted);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#000;font-weight:700;font-size:11px">2</div><div><div style="font-size:13px">Sélectionnez <strong style="color:var(--or)">"Sur l'écran d'accueil"</strong></div></div></div>
+        <div style="display:flex;gap:12px;align-items:flex-start"><div style="width:26px;height:26px;background:var(--or-muted);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#000;font-weight:700;font-size:11px">3</div><div><div style="font-size:13px">Appuyez sur <strong style="color:var(--or)">"Ajouter"</strong></div></div></div>
+      </div>
+    </div>
+    <div class="modal-ft"><button class="btn btn-gold" onclick="closeModal('iosInstall')">Compris ✓</button></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
